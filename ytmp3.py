@@ -6,8 +6,21 @@ from tkinter import filedialog
 import threading
 import sys
 
+"""
+This is a simple porogram that converts YouTube videos to m4a.
+It uses ytl-dlp as its backend. It was created to make it easier
+for my friends (that doe sknow what a terminal is) to extraxt the
+audio from YouTube vides (for personal use only!).
+
+Written by: Johan Bodén, JanWack (GitHub)
+
+Licence: MIT
+"""
 
 class MyLogger:
+    """
+    Based on the example from yt-dlp
+    """
     def __init__(self):
         self.log_file = open("log.txt", "w")
 
@@ -25,6 +38,10 @@ class MyLogger:
 
 
 def app():
+    """
+    The main function. Not really good code-quality by having
+    everything in one file hehe.
+    """
 
     URLs = []
 
@@ -41,10 +58,6 @@ def app():
 
     menubar = Menu(root)
 
-    file = Menu(menubar, tearoff=0)
-    menubar.add_cascade(label='File', menu=file)
-    file.add_command(label ='Exit', command = exit_prog)
-
     help = Menu(menubar, tearoff=0)
     menubar.add_cascade(label ='Help', menu = help)
     def about_on_click():
@@ -52,7 +65,7 @@ def app():
             title="About Easy ytmp3.",
             detail="Download songs from YouTube!\n\n" \
             "OBS! This program does not check for valid URL's. Use at your own risk." \
-            "\n\nBased on yt-dlp.", icon='question')
+            "\n\nBased on yt-dlp.\nWritten by Johan Bodén (JanWack - Github)", icon='question')
     help.add_command(label ='About', command = about_on_click)
 
     root.config(menu=menubar)
@@ -162,6 +175,18 @@ def app():
 
 
 def download_items(uris: list, path: str, prog: Progressbar, lab: Label):
+    """
+    Based on the exmaple from yt-dlp
+    
+    :param uris: A list of URL's
+    :type uris: [str]
+    :param path: Save destination
+    :type path: str
+    :param prog: A reference to the progress bar
+    :type prog: Progressbar
+    :param lab: A reference to the progress bar label
+    :type lab: Label
+    """
     ydl_opts = {
         'format': 'm4a/bestaudio/best',
         'postprocessors': [{
