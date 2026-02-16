@@ -4,6 +4,7 @@ from tkinter.ttk import *
 import tkinter.messagebox
 from tkinter import filedialog
 import threading
+import sys
 
 
 class MyLogger:
@@ -36,7 +37,7 @@ def app():
 
     def exit_prog():
         root.destroy()
-        exit(0)
+        sys.exit(0)
 
     menubar = Menu(root)
 
