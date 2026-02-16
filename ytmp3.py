@@ -1,6 +1,6 @@
 import yt_dlp
-from tkinter import *
-from tkinter.ttk import *
+import tkinter as tk
+import tkinter.ttk as ttk
 import tkinter.messagebox
 from tkinter import filedialog
 import threading
@@ -43,11 +43,19 @@ def app():
     everything in one file hehe.
     """
 
+    background_color = "#26242f"
+
     URLs = []
 
-    root = Tk()
+    root = tk.Tk()
     root.title("Easy ytmp3")
     root.geometry('800x600')
+    root.configure(bg=background_color)
+
+    label_style = ttk.Style()
+    button_style = ttk.Style()
+    label_style.configure("TLabel", background=background_color, foreground="#FFFFFF")
+    button_style.configure("TButton", background=background_color, foreground="#FFFFFF")
 
     url_var = tkinter.StringVar()
     destination_path = tkinter.StringVar(value="")
@@ -56,9 +64,9 @@ def app():
         root.destroy()
         sys.exit(0)
 
-    menubar = Menu(root)
+    menubar = tk.Menu(root)
 
-    help = Menu(menubar, tearoff=0)
+    help = tk.Menu(menubar, tearoff=0)
     menubar.add_cascade(label ='Help', menu = help)
     def about_on_click():
         tkinter.messagebox.showinfo(
@@ -77,24 +85,24 @@ def app():
     root.grid_rowconfigure(3, weight=1)
     root.grid_rowconfigure(4, weight=0)
 
-    frame1 = Frame(root, relief='groove')
+    frame1 = tk.Frame(root, background=background_color)
     frame1.grid(row=0, column=0, sticky='ew')
     frame1.grid_columnconfigure(0, weight=0)
     frame1.grid_columnconfigure(1, weight=1)
-    frame2 = Frame(root, relief='groove')
+    frame2 = tk.Frame(root, background=background_color)
     frame2.grid(row=1, column=0, sticky='ew')
     frame2.grid_columnconfigure(0, weight=0)
     frame2.grid_columnconfigure(1, weight=1)
-    frame3 = Frame(root, relief='groove')
+    frame3 = tk.Frame(root, background=background_color)
     frame3.grid(row=2, column=0, sticky='ew')
     frame3.grid_columnconfigure(0, weight=0)
     frame3.grid_columnconfigure(1, weight=1)
     frame3.grid_columnconfigure(2, weight=0)
-    frame4 = Frame(root, relief='sunken')
+    frame4 = tk.Frame(root, background=background_color)
     frame4.grid(row=3, column=0, sticky='ew')
     frame4.grid_columnconfigure(0, weight=1)
     frame4.grid_columnconfigure(1, weight=0)
-    frame5 = Frame(root, relief='groove')
+    frame5 = tk.Frame(root, background=background_color)
     frame5.grid(row=4, column=0, sticky='ew')
     frame5.grid_columnconfigure(0, weight=0)
     frame5.grid_columnconfigure(1, weight=1)
@@ -104,8 +112,8 @@ def app():
         path_name.configure(text=path)
         destination_path.set(path)
 
-    choose_file_location = Button(frame1, text="Path", command=browse_files)
-    path_name = Label(frame1, text="")
+    choose_file_location = ttk.Button(frame1, text="Destination path", command=browse_files, style='TButton')
+    path_name = ttk.Label(frame1, text="", style='TLabel')
     choose_file_location.grid(row=0, column=0, sticky='w',padx=10, pady=10)
     path_name.grid(row=0, column=1, sticky='w', padx=10, pady=10)
 
@@ -116,10 +124,10 @@ def app():
             URLs.append(str_url)
             url_list.insert(url_list.size(), str_url)
 
-    add_item_text = Label(frame2, text="Add URL (video/playlist):")
-    input = Entry(frame2, textvariable=url_var)
-    add_button = Button(frame2, text="Add", command=add_entry)
-    clear_button = Button(frame2, text="Clear", command= lambda: input.delete(0, tkinter.END))
+    add_item_text = ttk.Label(frame2, text="Add URL (video/playlist):", style='TLabel')
+    input = ttk.Entry(frame2, textvariable=url_var)
+    add_button = ttk.Button(frame2, text="Add", command=add_entry, style='TButton')
+    clear_button = ttk.Button(frame2, text="Clear", command= lambda: input.delete(0, tkinter.END), style='TButton')
     add_item_text.grid(row=1, column=0, sticky='w', pady=10, padx=10)
     input.grid(row=1, column=1, sticky='ew', padx=10, pady=10)
     add_button.grid(row=1, column=2, sticky='e', padx=0, pady=10)
@@ -141,21 +149,21 @@ def app():
         url_list.delete(0, url_list.size())
         URLs.clear()
 
-    url_list = Listbox(frame4, bg="grey", selectmode='single', height=20)
-    download = Button(frame3, text="Download listed items", command=begin_download, style='W.TButton')
-    bindings = Label(frame3, text="Enter: add item\tBackspace: remove item")
-    clear = Button(frame3, text="Clear list", command=clear_list)
+    url_list = tk.Listbox(frame4, bg="grey", selectmode='single', height=20)
+    download = ttk.Button(frame3, text="Download listed items", command=begin_download, style='TButton')
+    bindings = ttk.Label(frame3, text="Enter: add item\tBackspace: remove item", style='TLabel')
+    clear = ttk.Button(frame3, text="Clear list", command=clear_list, style='TButton')
     download.grid(row=2, column=0, sticky='w', padx=10, pady=10)
     bindings.grid(row=2, column=1, sticky='e', padx=10, pady=10)
     clear.grid(row=2, column=2, sticky="e", padx=10, pady=10)
     url_list.grid(row=3, column=0, sticky='nsew', padx=10, pady=10)
 
-    scroll = Scrollbar(frame4, orient=tkinter.VERTICAL, command=url_list.yview)
+    scroll = ttk.Scrollbar(frame4, orient=tkinter.VERTICAL, command=url_list.yview)
     url_list['yscrollcommand'] = scroll.set
     scroll.grid(row=3, column=1, sticky='ns', padx=10, pady=10)
 
-    prog_label = Label(frame5, text="No jobs")
-    progress = Progressbar(frame5, orient=HORIZONTAL, mode='indeterminate', length=400)
+    prog_label = ttk.Label(frame5, text="No jobs", style='TLabel')
+    progress = ttk.Progressbar(frame5, orient=tk.HORIZONTAL, mode='indeterminate', length=400)
     prog_label.grid(row=4, column=0, sticky='w', padx=10, pady=10)
 
 
@@ -175,7 +183,7 @@ def app():
     root.mainloop()
 
 
-def download_items(uris: list, path: str, prog: Progressbar, lab: Label):
+def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label):
     """
     Based on the exmaple from yt-dlp
     
