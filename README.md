@@ -1,6 +1,8 @@
 # 🎧 Simple-ytmp3: A Youtube to MP3 Program
 A simple program that converts YouTube videos and playlists to mp3 (technically m4a) files.
 
+Based on [yt-dlp](https://github.com/yt-dlp/yt-dlp)!
+
 ## 📚 Features
 - Converts videos and playlists
 - Can convert multiple videos. Just add the URL's to the download list.
@@ -49,3 +51,7 @@ python3 ytmp3.py
 source bin/activate
 ```
 Or alternatively, install all dependencies outside of the virtual environemnt (see requirements.txt)
+
+## 📝 Licence
+MIT License. Improve it!
+
