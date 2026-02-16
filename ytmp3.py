@@ -77,24 +77,24 @@ def app():
     root.grid_rowconfigure(3, weight=1)
     root.grid_rowconfigure(4, weight=0)
 
-    frame1 = Frame(root)
+    frame1 = Frame(root, relief='groove')
     frame1.grid(row=0, column=0, sticky='ew')
     frame1.grid_columnconfigure(0, weight=0)
     frame1.grid_columnconfigure(1, weight=1)
-    frame2 = Frame(root)
+    frame2 = Frame(root, relief='groove')
     frame2.grid(row=1, column=0, sticky='ew')
     frame2.grid_columnconfigure(0, weight=0)
     frame2.grid_columnconfigure(1, weight=1)
-    frame3 = Frame(root)
+    frame3 = Frame(root, relief='groove')
     frame3.grid(row=2, column=0, sticky='ew')
     frame3.grid_columnconfigure(0, weight=0)
     frame3.grid_columnconfigure(1, weight=1)
     frame3.grid_columnconfigure(2, weight=0)
-    frame4 = Frame(root)
+    frame4 = Frame(root, relief='sunken')
     frame4.grid(row=3, column=0, sticky='ew')
     frame4.grid_columnconfigure(0, weight=1)
     frame4.grid_columnconfigure(1, weight=0)
-    frame5 = Frame(root)
+    frame5 = Frame(root, relief='groove')
     frame5.grid(row=4, column=0, sticky='ew')
     frame5.grid_columnconfigure(0, weight=0)
     frame5.grid_columnconfigure(1, weight=1)
@@ -131,7 +131,7 @@ def app():
         elif destination_path.get() == "":
             tkinter.messagebox.showinfo(title="No destination path", detail="There is no destination path selected.", icon='warning')
         else:
-            prog_label.grid(row=4, column=0, sticky='w', padx=10, pady=10)
+            prog_label.configure(text="Downloading")
             progress.grid(row=4, column=1, sticky='w', padx=10, pady=10)
             progress.start(4)
             thread1 = threading.Thread(target=download_items, args=(URLs, destination_path.get(), progress, prog_label))
@@ -142,7 +142,7 @@ def app():
         URLs.clear()
 
     url_list = Listbox(frame4, bg="grey", selectmode='single', height=20)
-    download = Button(frame3, text="Download listed items", command=begin_download)
+    download = Button(frame3, text="Download listed items", command=begin_download, style='W.TButton')
     bindings = Label(frame3, text="Enter: add item\tBackspace: remove item")
     clear = Button(frame3, text="Clear list", command=clear_list)
     download.grid(row=2, column=0, sticky='w', padx=10, pady=10)
@@ -154,8 +154,9 @@ def app():
     url_list['yscrollcommand'] = scroll.set
     scroll.grid(row=3, column=1, sticky='ns', padx=10, pady=10)
 
-    prog_label = Label(frame5, text="Downloading:")
+    prog_label = Label(frame5, text="No jobs")
     progress = Progressbar(frame5, orient=HORIZONTAL, mode='indeterminate', length=400)
+    prog_label.grid(row=4, column=0, sticky='w', padx=10, pady=10)
 
 
     def add_entry_button(event):
@@ -202,7 +203,7 @@ def download_items(uris: list, path: str, prog: Progressbar, lab: Label):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         error_code = ydl.download(uris)
     
-    lab.grid_forget()
+    lab.configure(text="No jobs")
     prog.stop()
     prog.grid_forget()
 
