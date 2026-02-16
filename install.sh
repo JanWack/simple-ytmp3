@@ -54,4 +54,4 @@ fi
 
 echo " === Building Executable === "
 
-pyinstaller --onefile ytmp3.py
+pyinstaller --onefile --windowed ytmp3.py
