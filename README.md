@@ -4,7 +4,9 @@ A simple program that converts YouTube videos and playlists to m4a/mp3 files.
 Based on [yt-dlp](https://github.com/yt-dlp/yt-dlp)!
 
 ## Preview of the program
-![Windows](./?raw=true "Windows")
+Windows:
+
+![Windows](./preview_Windows.png?raw=true "Windows")
 
 ## 📚 Features
 - Converts videos and playlists
