@@ -66,22 +66,25 @@ def clear_list(list: tk.Listbox):
         URLs.clear()
 
 
-def begin_download(path: tk.StringVar, prog_label: ttk.Label, progress: ttk.Progressbar, audio_fomrat: tk.StringVar):
+def begin_download(path: tk.StringVar, prog_label: ttk.Label, progress: ttk.Progressbar, audio_fomrat: tk.StringVar, stop: ttk.Button):
     """
     Starts the download process in a separate thread.
     """
     if not URLs: tkinter.messagebox.showinfo(title="No items", detail="There is nothing to download.", icon='info')
     else:
         if browse_files(path):
+            # Show progress bar and stop button
             prog_label.configure(text="Downloading, please wait.")
-            progress.grid(row=0, column=1, sticky='ew', padx=10)
+            progress.grid(row=0, column=1, sticky='ew')
+            stop.grid(row=0, column=2, sticky='e', padx=10)
+
             progress.start(4)
-            thread1 = threading.Thread(target=download_items, args=(URLs, path.get(), progress, prog_label, audio_fomrat.get()))
+            thread1 = threading.Thread(target=download_items, args=(URLs, path.get(), progress, prog_label, audio_fomrat.get(), stop))
             thread1.start()
         else: return
 
 
-def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label, audio_format: str):
+def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label, audio_format: str, stop: ttk.Button):
     """
     Based on the example from yt-dlp's GitHub.
     """
@@ -98,9 +101,10 @@ def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label, 
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl: error_code = ydl.download(uris)
     
-    lab.configure(text="No jobs")
     prog.stop()
     prog.grid_forget()
+    lab.configure(text="No jobs.")
+    stop.grid_forget()
 
     if error_code == 0: tkinter.messagebox.showinfo(title="", message="Download complete.", icon='info')
     else:
@@ -110,6 +114,10 @@ def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label, 
             icon='error',
             detail="Things may not work as expected.\nCheck the log file! Error code: " + str(error_code)
         )
+
+
+def stop_download():
+     print("Stopping")
 
 
 def exit_prog(root: tk.Tk):
@@ -134,10 +142,7 @@ def app():
 
     # Configure the main window
     root.columnconfigure(0, weight=1)
-    root.rowconfigure   (0, weight=0)
     root.rowconfigure   (1, weight=1)
-    root.rowconfigure   (2, weight=0)
-    root.rowconfigure   (3, weight=0)
 
     # Create frames
     frame0 = tk.Frame(root)
@@ -146,20 +151,13 @@ def app():
     frame3 = tk.Frame(root)
     
     # Configure The frames
-    frame0.columnconfigure  (0, weight=0)
     frame0.columnconfigure  (1, weight=1)
     frame0.grid             (row=0, column=0, sticky='ew')
     frame1.columnconfigure  (0, weight=1)
-    frame1.columnconfigure  (1, weight=0)
     frame1.rowconfigure     (0, weight=1)
     frame1.grid             (row=1, column=0, sticky='ewns')
-    frame2.columnconfigure  (0, weight=0)
-    frame2.columnconfigure  (1, weight=0)
-    frame2.columnconfigure  (2, weight=0)
     frame2.columnconfigure  (3, weight=1)
-    frame2.columnconfigure  (4, weight=0)
     frame2.grid             (row=2, column=0, sticky='ew')
-    frame3.columnconfigure  (0, weight=0)
     frame3.columnconfigure  (1, weight=1)
     frame3.grid             (row=3, column=0, sticky='ew')
 
@@ -170,18 +168,19 @@ def app():
 
     # Widgets
     url_list            = tk.Listbox        (frame1, bg="grey", selectmode='single')
-    add_item_text       = ttk.Label         (frame0, text="Add URL (video or playlist):")
+    add_item_text       = ttk.Label         (frame0, text="Video or playlist URL:")
     input               = ttk.Entry         (frame0, textvariable=url_var)
     add_button          = ttk.Button        (frame0, text="+", command=lambda: add_entry(input, url_var.get(), url_list), width=2)
     clear_button        = ttk.Button        (frame0, text="x", command= lambda: input.delete(0, tk.END), width=2)
     scroll              = ttk.Scrollbar     (frame1, orient=tk.VERTICAL, command=url_list.yview)
-    download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, prog_label, progress, audio_format))
+    download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, prog_label, progress, audio_format, stop_download))
     mp3_button          = ttk.Radiobutton   (frame2, text="mp3", variable=audio_format, value="mp3")
     m4a_button          = ttk.Radiobutton   (frame2, text="m4a", variable=audio_format, value="m4a")
     remove_entry_button = ttk.Button        (frame2, text="Remove item", command=lambda: remove_entry(url_list))
     clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(url_list))
-    prog_label          = ttk.Label         (frame3, text="No jobs")
+    prog_label          = ttk.Label         (frame3, text="No jobs.")
     progress            = ttk.Progressbar   (frame3, orient=tk.HORIZONTAL, mode='indeterminate')
+    stop_download       = ttk.Button        (frame3, text="Stop", command=lambda: stop_download())
     
     # Widget placements
     add_item_text.grid      (row=0, column=0, sticky='w', pady=10, padx=10)
@@ -195,7 +194,7 @@ def app():
     mp3_button.grid         (row=0, column=2, sticky='w', padx=10)
     remove_entry_button.grid(row=0, column=3, sticky='e')
     clear.grid              (row=0, column=4, sticky="e", padx=10, pady=10)
-    prog_label.grid         (row=0, column=0, sticky='w', padx=10, pady=5)
+    prog_label.grid         (row=0, column=0, sticky='w', padx=10, pady=10)
 
     # Set default audio format
     audio_format.set("m4a")
