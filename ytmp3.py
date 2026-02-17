@@ -128,7 +128,7 @@ def app():
     # Create main window
     root = tk.Tk()
 
-    root.title      ("Easy ytmp3")
+    root.title      ("Simple ytmp3")
     root.geometry   ('600x400')
     root.resizable  (0, 0)
 
