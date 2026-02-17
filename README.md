@@ -4,6 +4,7 @@ A simple program that converts YouTube videos and playlists to m4a/mp3 files.
 Based on [yt-dlp](https://github.com/yt-dlp/yt-dlp)!
 
 ## Preview of the program
+Windows:
 ![Alt text](./preview.png?raw=true "Optional Title")
 
 ## 📚 Features
@@ -35,11 +36,12 @@ cd simple-ytmp3
 ```
 
 ### 2. Run the install.sh script to install dependencies
+You may need to run chmod first.
 ```bash
 chmod -x install.sh
 ./install.sh
 ```
-You can use Git Bash if you are on Windows for example.
+You can use Git Bash if you are on Windows.
 
 ⚠️**OBS**: The install script will create an **executable** file of the program, but you can also just run the python script manually (see next step).
 
