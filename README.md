@@ -40,7 +40,7 @@ You may need to run chmod first.
 chmod -x install.sh
 ./install.sh
 ```
-You can use Git Bash if you are on Windows for example.
+You can use Git Bash if you are on Windows.
 
 ⚠️**OBS**: The install script will create an **executable** file of the program, but you can also just run the python script manually (see next step).
 
