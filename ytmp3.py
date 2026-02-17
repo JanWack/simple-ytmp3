@@ -74,7 +74,7 @@ def begin_download(path: tk.StringVar, prog_label: ttk.Label, progress: ttk.Prog
     else:
         if browse_files(path):
             prog_label.configure(text="Downloading, please wait.")
-            progress.grid(row=0, column=1, sticky='ew')
+            progress.grid(row=0, column=1, sticky='ew', padx=10)
             progress.start(4)
             thread1 = threading.Thread(target=download_items, args=(URLs, path.get(), progress, prog_label, audio_fomrat.get()))
             thread1.start()
