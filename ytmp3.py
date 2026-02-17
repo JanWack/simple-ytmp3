@@ -1,8 +1,10 @@
 import yt_dlp
+import json
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox
 from tkinter import filedialog
+from tkinter import PhotoImage
 import threading
 import sys
 
@@ -35,13 +37,36 @@ class MyLogger:
     def error(self, msg): print(msg ,file=self.log_file)
 
 
+class MyPostProcessor(yt_dlp.postprocessor.PostProcessor):
+    """
+    Based on the example from yt-dlp pypi
+    """
+    def run(self, info):
+        return [], info
+
+
+class CustomListItem():
+    def __init__(self, url: str):
+        self.info = extract_info(url)
+
+     
+
 # ============= Functions ============= #
+
+def my_hook(d):
+    """
+    Based on the example from yt-dlp pypi
+    """
+    if d['status'] == 'finished':
+        print('Done downloading, now post-processing ...')
+
 
 def add_entry(input: ttk.Entry, url: str, list: tk.Listbox):
         input.delete(0, tk.END)
         # Check if the input starts with YouTube's address
         if url.startswith("https://www.youtube.com"):
             URLs.append(url)
+            #c = CustomListItem(url)
             list.insert(list.size(), url)
 
 
@@ -96,10 +121,13 @@ def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label, 
         }],
         'paths' : { 'home' : path },
         'logger': MyLogger(),
-        'quiet': True
+        'quiet': True,
+        'progress_hooks': [my_hook]
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl: error_code = ydl.download(uris)
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.add_post_processor(MyPostProcessor(), when='pre_process')
+        error_code = ydl.download(uris)
     
     prog.stop()
     prog.grid_forget()
@@ -114,6 +142,22 @@ def download_items(uris: list, path: str, prog: ttk.Progressbar, lab: tk.Label, 
             icon='error',
             detail="Things may not work as expected.\nCheck the log file! Error code: " + str(error_code)
         )
+
+
+def extract_info(url: str) -> dict[str, str]:
+    """
+    Extracts information from the video's url.
+    """
+    ydl_opts = {}
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        info_dict = ydl.sanitize_info(info)
+        return {
+            'url': url,
+            'img': info_dict['thumbnail'],
+            'title': info_dict['fulltitle'],
+            'duration': info_dict['duration_string']
+        }
 
 
 def stop_download():
