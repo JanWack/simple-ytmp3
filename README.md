@@ -35,6 +35,7 @@ cd simple-ytmp3
 ```
 
 ### 2. Run the install.sh script to install dependencies
+You may need to run chmod first.
 ```bash
 chmod -x install.sh
 ./install.sh
