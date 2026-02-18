@@ -1,10 +1,8 @@
 import yt_dlp
-import json
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox
 from tkinter import filedialog
-from tkinter import PhotoImage
 import threading
 import sys
 
@@ -48,7 +46,6 @@ class MyPostProcessor(yt_dlp.postprocessor.PostProcessor):
 class CustomListItem():
     def __init__(self, url: str):
         self.info = extract_info(url)
-
      
 
 # ============= Functions ============= #
@@ -61,13 +58,22 @@ def my_hook(d):
         print('Done downloading, now post-processing ...')
 
 
-def add_entry(input: ttk.Entry, url: str, list: tk.Listbox):
+def add_entry(input: ttk.Entry, url: str, list: tk.Frame):
         input.delete(0, tk.END)
         # Check if the input starts with YouTube's address
         if url.startswith("https://www.youtube.com"):
-            URLs.append(url)
-            #c = CustomListItem(url)
-            list.insert(list.size(), url)
+            #URLs.append(url)
+
+            info_obj = CustomListItem(url)
+
+            info_frame = tk.Frame(list, bg="grey", padx=10, pady=10)
+            info_frame.pack()
+
+            lab = ttk.Label(info_frame, text=info_obj.info['title'] + ' [' + info_obj.info['duration'] + ']')
+            remove = ttk.Button(info_frame, text="x", width=2)
+            remove.grid(row=0, column=0, sticky='e')
+            lab.grid(row=0, column=1, sticky='e', padx=10)
+
 
 
 def remove_entry(list: tk.Listbox):
@@ -211,17 +217,18 @@ def app():
     audio_format        = tk.StringVar(root) # Default is m4a
 
     # Widgets
-    url_list            = tk.Listbox        (frame1, bg="grey", selectmode='single')
+    item_list           = tk.Canvas         (frame1, bg="grey")
+    scrollable_frame    = tk.Frame          (item_list)
+    scroll              = ttk.Scrollbar     (frame1, orient=tk.VERTICAL, command=item_list.yview)
     add_item_text       = ttk.Label         (frame0, text="Video or playlist URL:")
     input               = ttk.Entry         (frame0, textvariable=url_var)
-    add_button          = ttk.Button        (frame0, text="+", command=lambda: add_entry(input, url_var.get(), url_list), width=2)
+    add_button          = ttk.Button        (frame0, text="+", command=lambda: add_entry(input, url_var.get(), scrollable_frame), width=2)
     clear_button        = ttk.Button        (frame0, text="x", command= lambda: input.delete(0, tk.END), width=2)
-    scroll              = ttk.Scrollbar     (frame1, orient=tk.VERTICAL, command=url_list.yview)
     download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, prog_label, progress, audio_format, stop_download))
     mp3_button          = ttk.Radiobutton   (frame2, text="mp3", variable=audio_format, value="mp3")
     m4a_button          = ttk.Radiobutton   (frame2, text="m4a", variable=audio_format, value="m4a")
-    remove_entry_button = ttk.Button        (frame2, text="Remove item", command=lambda: remove_entry(url_list))
-    clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(url_list))
+    remove_entry_button = ttk.Button        (frame2, text="Remove item", command=lambda: remove_entry(item_list))
+    clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(item_list))
     prog_label          = ttk.Label         (frame3, text="No jobs.")
     progress            = ttk.Progressbar   (frame3, orient=tk.HORIZONTAL, mode='indeterminate')
     stop_download       = ttk.Button        (frame3, text="Stop", command=lambda: stop_download())
@@ -232,7 +239,7 @@ def app():
     add_button.grid         (row=0, column=2, sticky='e', padx=0, pady=10)
     clear_button.grid       (row=0, column=3, sticky='e', padx=10, pady=10)
     scroll.grid             (row=0, column=1, sticky='nse', padx=10)
-    url_list.grid           (row=0, column=0, sticky='nsew', padx=10)
+    item_list.grid          (row=0, column=0, sticky='nsew', padx=10)
     download.grid           (row=0, column=0, sticky='w', padx=10, pady=10)
     m4a_button.grid         (row=0, column=1, sticky='w')
     mp3_button.grid         (row=0, column=2, sticky='w', padx=10)
@@ -244,16 +251,18 @@ def app():
     audio_format.set("m4a")
 
     # Set scroll for the listbox
-    url_list['yscrollcommand'] = scroll.set
+    item_list.configure(yscrollcommand=scroll.set)
+    item_list.create_window((0, 0), window=scrollable_frame, anchor='nw')
+    scrollable_frame.bind("<Configure>", lambda e: item_list.configure(scrollregion=item_list.bbox("all")))
 
     # Callbacks
-    def add_entry_button(event): add_entry(input, url_var.get(), url_list)
-    def remove_entry_button(event): remove_entry(url_list)
+    def add_entry_button(event): add_entry(input, url_var.get(), scrollable_frame)
+    def remove_entry_button(event): remove_entry(item_list)
     def exit_request(): exit_prog(root)
 
     # Keybindings
     input.bind("<Return>", add_entry_button)
-    url_list.bind("<BackSpace>", remove_entry_button)
+    item_list.bind("<BackSpace>", remove_entry_button)
 
     # Handle exit
     root.protocol("WM_DELETE_WINDOW", exit_request)
