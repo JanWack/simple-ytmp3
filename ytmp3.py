@@ -7,6 +7,10 @@ import threading
 import sys
 
 """
+https://www.youtube.com/watch?v=0Yxl-lHsEq8
+"""
+
+"""
 This is a simple porogram that converts YouTube videos to m4a.
 It uses ytl-dlp as its backend. It was originally created to make
 it easier for my friends (that doe sknow what a terminal is) to
@@ -43,9 +47,18 @@ class MyPostProcessor(yt_dlp.postprocessor.PostProcessor):
         return [], info
 
 
-class CustomListItem():
-    def __init__(self, url: str):
+class CustomListItem(tk.Frame):
+    """
+    Custom Frame widget
+    """
+    def __init__(self, root: tk.Frame, url: str):
+        super().__init__(master=root)
         self.info = extract_info(url)
+        self.configure(padx=10, pady=10)
+        lab = ttk.Label(self, text=self.info['title'] + ' [' + self.info['duration'] + ']')
+        remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']))
+        remove.grid(row=0, column=0, sticky='e')
+        lab.grid(row=0, column=1, sticky='e', padx=10)
      
 
 # ============= Functions ============= #
@@ -59,41 +72,33 @@ def my_hook(d):
 
 
 def add_entry(input: ttk.Entry, url: str, list: tk.Frame):
-        input.delete(0, tk.END)
-        # Check if the input starts with YouTube's address
-        if url.startswith("https://www.youtube.com"):
-            #URLs.append(url)
+    input.delete(0, tk.END)
+    # Check if the input starts with YouTube's address
+    if url.startswith("https://www.youtube.com"):
+        URLs.append(url)
 
-            info_obj = CustomListItem(url)
-
-            info_frame = tk.Frame(list, bg="grey", padx=10, pady=10)
-            info_frame.pack()
-
-            lab = ttk.Label(info_frame, text=info_obj.info['title'] + ' [' + info_obj.info['duration'] + ']')
-            remove = ttk.Button(info_frame, text="x", width=2)
-            remove.grid(row=0, column=0, sticky='e')
-            lab.grid(row=0, column=1, sticky='e', padx=10)
+        info_obj = CustomListItem(list, url)
+        info_obj.pack()
 
 
 
-def remove_entry(list: tk.Listbox):
-    selected_indx = list.curselection()
-    if selected_indx:
-        selected = list.selection_get()
-        list.delete(selected_indx)
-        URLs.remove(selected)
+def remove_entry(item: CustomListItem, url_to_remove: str):
+    try:
+        URLs.remove(url_to_remove)
+    except ValueError:
+        tkinter.messagebox.showwarning(title="ValueError", detail="Could not remove item.", icon='error')
+    item.destroy()
 
 
 def browse_files(path: tk.StringVar) -> bool:
-        dest = filedialog.askdirectory(initialdir=".", title="Select destination folder", mustexist=True)
-        if path:
-            path.set(dest)
-            return True
-        else: return False
+    dest = filedialog.askdirectory(initialdir=".", title="Select destination folder", mustexist=True)
+    if path:
+        path.set(dest)
+        return True
+    else: return False
 
 
-def clear_list(list: tk.Listbox):
-        list.delete(0, list.size())
+def clear_list():
         URLs.clear()
 
 
@@ -204,7 +209,9 @@ def app():
     frame0.columnconfigure  (1, weight=1)
     frame0.grid             (row=0, column=0, sticky='ew')
     frame1.columnconfigure  (0, weight=1)
-    frame1.rowconfigure     (0, weight=1)
+    frame1.rowconfigure     (0, weight=0)
+    frame1.rowconfigure     (1, weight=1)
+    frame1.rowconfigure     (2, weight=0)
     frame1.grid             (row=1, column=0, sticky='ewns')
     frame2.columnconfigure  (3, weight=1)
     frame2.grid             (row=2, column=0, sticky='ew')
@@ -217,7 +224,7 @@ def app():
     audio_format        = tk.StringVar(root) # Default is m4a
 
     # Widgets
-    item_list           = tk.Canvas         (frame1, bg="grey")
+    item_list           = tk.Canvas         (frame1)
     scrollable_frame    = tk.Frame          (item_list)
     scroll              = ttk.Scrollbar     (frame1, orient=tk.VERTICAL, command=item_list.yview)
     add_item_text       = ttk.Label         (frame0, text="Video or playlist URL:")
@@ -227,25 +234,27 @@ def app():
     download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, prog_label, progress, audio_format, stop_download))
     mp3_button          = ttk.Radiobutton   (frame2, text="mp3", variable=audio_format, value="mp3")
     m4a_button          = ttk.Radiobutton   (frame2, text="m4a", variable=audio_format, value="m4a")
-    remove_entry_button = ttk.Button        (frame2, text="Remove item", command=lambda: remove_entry(item_list))
     clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(item_list))
     prog_label          = ttk.Label         (frame3, text="No jobs.")
     progress            = ttk.Progressbar   (frame3, orient=tk.HORIZONTAL, mode='indeterminate')
     stop_download       = ttk.Button        (frame3, text="Stop", command=lambda: stop_download())
+    sep1                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
+    sep2                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
     
     # Widget placements
     add_item_text.grid      (row=0, column=0, sticky='w', pady=10, padx=10)
     input.grid              (row=0, column=1, sticky='ew', padx=10, pady=10)
     add_button.grid         (row=0, column=2, sticky='e', padx=0, pady=10)
     clear_button.grid       (row=0, column=3, sticky='e', padx=10, pady=10)
-    scroll.grid             (row=0, column=1, sticky='nse', padx=10)
-    item_list.grid          (row=0, column=0, sticky='nsew', padx=10)
+    scroll.grid             (row=1, column=1, sticky='nse', padx=10)
+    item_list.grid          (row=1, column=0, sticky='nsew', padx=10)
     download.grid           (row=0, column=0, sticky='w', padx=10, pady=10)
     m4a_button.grid         (row=0, column=1, sticky='w')
     mp3_button.grid         (row=0, column=2, sticky='w', padx=10)
-    remove_entry_button.grid(row=0, column=3, sticky='e')
     clear.grid              (row=0, column=4, sticky="e", padx=10, pady=10)
     prog_label.grid         (row=0, column=0, sticky='w', padx=10, pady=10)
+    sep1.grid               (row=0, column=0, sticky='ew', padx=10)
+    sep2.grid               (row=2, column=0, sticky='ew', padx=10)
 
     # Set default audio format
     audio_format.set("m4a")
