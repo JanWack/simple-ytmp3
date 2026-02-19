@@ -7,10 +7,6 @@ import threading
 import sys
 
 """
-https://www.youtube.com/watch?v=0Yxl-lHsEq8
-"""
-
-"""
 This is a simple porogram that converts YouTube videos to m4a.
 It uses ytl-dlp as its backend. It was originally created to make
 it easier for my friends (that doe sknow what a terminal is) to
@@ -54,18 +50,22 @@ class CustomListItem(tk.Frame):
     """
     def __init__(self, root: tk.Frame, url: str):
         super().__init__(master=root)
-        self.info = extract_info(url)
         self.configure(padx=10)
+
+        self.info = {}
+        self.info['url'] = url
+
+        lab = ttk.Label(self, text="Loading...")
+        remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']), style='R.TButton')
+
+        thread1 = threading.Thread(target=extract_info, args=(url, self.info, lab))
+        thread1.start()
 
         style = ttk.Style().configure(
             'R.TButton',
             relief="flat"
         )
 
-        lab_text: str = "Track " + str(len(URLs) - 1) + " :\t" + self.info['title'] + ' [' + self.info['duration'] + ']'
-        
-        lab = ttk.Label(self, text=lab_text)
-        remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']), style='R.TButton')
         lab.grid(row=0, column=1, sticky='e', padx=10)
         remove.grid(row=0, column=0, sticky='e')
      
@@ -76,7 +76,7 @@ def my_hook(d):
     """
     Based on the example from yt-dlp pypi. Not implemented yet.
     """
-    # if d['status'] == 'finished': print('Done downloading, now post-processing ...')
+    # if d['status'] == 'finished': print('Done downloading')
     pass
 
 
@@ -174,7 +174,7 @@ def download_items(uris: list, path: str, audio_format: str, download: ttk.Butto
     clear.configure(state=tk.NORMAL)
 
 
-def extract_info(url: str) -> dict[str, str]:
+def extract_info(url: str, info: dict, label: ttk.Label):
     """
     Extracts information from the video's url.
     """
@@ -183,15 +183,22 @@ def extract_info(url: str) -> dict[str, str]:
         'quiet': True,
         'progress_hooks': [my_hook]
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         info_dict = ydl.sanitize_info(info)
-        return {
-            'url': url,
-            'img': info_dict['thumbnail'],
-            'title': info_dict['fulltitle'],
-            'duration': info_dict['duration_string']
-        }
+
+    img: str = info_dict.get('thumbnail', "")
+    title: str = info_dict.get('fulltitle', "Unknown title")
+    duration: str = info_dict.get('duration_string', "-:-")
+
+    info['img']     = img
+    info['title']   = title
+    info['duration']= duration
+
+    # Update the video label
+    lab_text: str = title + " [" + duration + ']'
+    label.configure(text=lab_text)
 
 
 def stop_download():
@@ -244,7 +251,7 @@ def app():
     audio_format        = tk.StringVar(root)
 
     # Styles
-    style = ttk.Style().configure(
+    ttk.Style().configure(
         'F.TButton',
         relief="flat"
     )
