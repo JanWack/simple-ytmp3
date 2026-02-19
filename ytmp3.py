@@ -63,16 +63,17 @@ class CustomListItem(tk.Frame):
         self.info = {}
         self.info['url'] = url
 
+        style = ttk.Style().configure(
+            'R.TButton',
+            relief="flat"
+        )
+        
         lab = ttk.Label(self, text="Loading...")
         remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']), style='R.TButton')
 
         thread1 = threading.Thread(target=extract_info, args=(url, self.info, lab, remove))
         thread1.start()
 
-        style = ttk.Style().configure(
-            'R.TButton',
-            relief="flat"
-        )
 
         lab.grid(row=0, column=1, sticky='e', padx=10)
      
@@ -144,25 +145,44 @@ def begin_download(audio_fomrat: tk.StringVar, download: ttk.Button, clear: ttk.
         else: return
 
 
-def download_items(uris: list, path: str, audio_format: str, download: ttk.Button, clear: ttk.Button, progress: ttk.Progressbar):
+def download_items(uris: list, path: str, format: str, download: ttk.Button, clear: ttk.Button, progress: ttk.Progressbar):
     """
     Based on the example from yt-dlp's GitHub.
     """
     logger: MyLogger = MyLogger()
-    ydl_opts = {
-        'format': audio_format + '/bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': audio_format,
-        }],
-        'paths' : { 'home' : path },
-        'logger': logger,
-        'quiet': True,
-        'progress_hooks': [my_hook]
-    }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.add_post_processor(MyPostProcessor(), when='pre_process')
+    ydl_opts_v: dict
+
+    if format == "mp3":
+        ydl_opts_v = {
+            'format': format + '/bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': format,
+            }],
+            'paths' : { 'home' : path },
+            'logger': logger,
+            'quiet': True,
+            'progress_hooks': [my_hook]
+        }
+    elif format == "mp4":
+        ydl_opts_v = {
+            'format': 'best',
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': format,
+            }],
+            'paths' : { 'home' : path },
+            'logger': logger,
+            'quiet': True,
+            'progress_hooks': [my_hook]
+        }
+    else:
+        tkinter.messagebox.showinfo(title="Error", message="Format error", icon='error')
+        return
+
+    with yt_dlp.YoutubeDL(ydl_opts_v) as ydl:
+        #ydl.add_post_processor(MyPostProcessor(), when='pre_process')
         error_code = ydl.download(uris)
     
     progress.stop()
@@ -300,7 +320,7 @@ def app():
     add_button          = ttk.Button        (frame0, text="+", command=lambda: add_entry(input, url_var.get(), scrollable_frame), width=2, style='F.TButton')
     clear_entry         = ttk.Button        (frame0, text="x", command= lambda: input.delete(0, tk.END), width=2, style='F.TButton')
     mp3_button          = ttk.Radiobutton   (frame2, text="mp3", variable=audio_format, value="mp3")
-    m4a_button          = ttk.Radiobutton   (frame2, text="m4a", variable=audio_format, value="m4a")
+    mp4_button          = ttk.Radiobutton   (frame2, text="mp4", variable=audio_format, value="mp4")
     download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(audio_format, download, clear, frame2))
     clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(scrollable_frame))
     sep1                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
@@ -314,14 +334,14 @@ def app():
     scroll.grid             (row=1, column=1, sticky='nse', padx=10)
     item_list.grid          (row=1, column=0, sticky='nsew', padx=0, pady=0)
     download.grid           (row=0, column=0, sticky='w', padx=10, pady=10)
-    m4a_button.grid         (row=0, column=1, sticky='w')
-    mp3_button.grid         (row=0, column=2, sticky='w', padx=10)
+    mp3_button.grid         (row=0, column=1, sticky='w')
+    mp4_button.grid         (row=0, column=2, sticky='w', padx=10)
     clear.grid              (row=0, column=4, sticky="e", padx=10, pady=10)
     sep1.grid               (row=0, column=0, sticky='ew', padx=10)
     sep2.grid               (row=2, column=0, sticky='ew', padx=10)
 
     # Set default audio format
-    audio_format.set("m4a")
+    audio_format.set("mp3")
 
     # Set scroll for the listbox
     item_list.configure(yscrollcommand=scroll.set)
