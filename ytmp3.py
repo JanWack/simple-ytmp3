@@ -97,15 +97,6 @@ def remove_entry(item: CustomListItem, url_to_remove: str):
         tkinter.messagebox.showwarning(title="ValueError", detail="Could not remove item.", icon='error')
     item.destroy()
 
-
-def browse_files(path: tk.StringVar) -> bool:
-    dest = filedialog.askdirectory(initialdir=".", title="Select destination folder", mustexist=True)
-    if path:
-        path.set(dest)
-        return True
-    else: return False
-
-
 def clear_list(list: tk.Frame):
     """
     Destroys all child-widgets in the scroll frame and clears the url-list.
@@ -115,7 +106,7 @@ def clear_list(list: tk.Frame):
     URLs.clear()
 
 
-def begin_download(path: tk.StringVar, audio_fomrat: tk.StringVar, download: ttk.Button, clear: ttk.Button, frame: tk.Frame):
+def begin_download(audio_fomrat: tk.StringVar, download: ttk.Button, clear: ttk.Button, frame: tk.Frame):
     """
     Starts the download process in a separate thread.
     """
@@ -123,7 +114,8 @@ def begin_download(path: tk.StringVar, audio_fomrat: tk.StringVar, download: ttk
     else:
         # Prevents accidental modifications to the url-list
         url_cpy = URLs.copy()
-        if browse_files(path):
+        path: str = filedialog.askdirectory(initialdir=".", title="Select destination folder", mustexist=True)
+        if type(path) == str and path != "":
             # Disable the download and clear button.
             download.configure(state=tk.DISABLED)
             clear.configure(state=tk.DISABLED)
@@ -133,7 +125,7 @@ def begin_download(path: tk.StringVar, audio_fomrat: tk.StringVar, download: ttk
             progress.grid(row=0, column=3, sticky='we', padx=10)
             progress.start()
 
-            thread1 = threading.Thread(target=download_items, args=(url_cpy, path.get(), audio_fomrat.get(), download, clear, progress))
+            thread1 = threading.Thread(target=download_items, args=(url_cpy, path, audio_fomrat.get(), download, clear, progress))
             thread1.start()
         else: return
 
@@ -247,7 +239,6 @@ def app():
 
     # Variables
     url_var             = tk.StringVar(root)
-    destination_path    = tk.StringVar(root)
     audio_format        = tk.StringVar(root)
 
     # Styles
@@ -266,7 +257,7 @@ def app():
     clear_entry         = ttk.Button        (frame0, text="x", command= lambda: input.delete(0, tk.END), width=2, style='F.TButton')
     mp3_button          = ttk.Radiobutton   (frame2, text="mp3", variable=audio_format, value="mp3")
     m4a_button          = ttk.Radiobutton   (frame2, text="m4a", variable=audio_format, value="m4a")
-    download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, audio_format, download, clear, frame2))
+    download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(audio_format, download, clear, frame2))
     clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(scrollable_frame))
     sep1                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
     sep2                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
