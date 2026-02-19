@@ -17,7 +17,7 @@ Written by: Johan Bodén, JanWack (GitHub).
 Licence: MIT.
 """
 
-# Global list of URL's
+# Globals
 URLs = []
 
 # ============= Classes ============= #
@@ -25,14 +25,22 @@ class MyLogger:
     """
     Based on the example from yt-dlp's GitHub. For logging errors and warnings.
     """
-    def __init__(self): self.log_file = open("log.txt", "w")
+    def __init__(self):
+        self.dlp_e: int = 0
+        self.dlp_w: int = 0
+        self.log_file = open("log.txt", "w")
 
     def debug(self, msg):
         if msg.startswith('Warning'): self.warning(msg)
         elif msg.startswith('Error'): self.error(msg)
 
-    def warning(self, msg): print(msg ,file=self.log_file)
-    def error(self, msg): print(msg ,file=self.log_file)
+    def warning(self, msg):
+        self.dlp_w += 1
+        print(msg ,file=self.log_file)
+
+    def error(self, msg):
+        self.dlp_e += 1
+        print(msg ,file=self.log_file)
 
 
 class MyPostProcessor(yt_dlp.postprocessor.PostProcessor):
@@ -58,7 +66,7 @@ class CustomListItem(tk.Frame):
         lab = ttk.Label(self, text="Loading...")
         remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']), style='R.TButton')
 
-        thread1 = threading.Thread(target=extract_info, args=(url, self.info, lab))
+        thread1 = threading.Thread(target=extract_info, args=(url, self.info, lab, remove))
         thread1.start()
 
         style = ttk.Style().configure(
@@ -67,10 +75,15 @@ class CustomListItem(tk.Frame):
         )
 
         lab.grid(row=0, column=1, sticky='e', padx=10)
-        remove.grid(row=0, column=0, sticky='e')
      
 
 # ============= Functions ============= #
+
+def increment_w():
+    dlp_warnings += 1
+
+def increment_e():
+    dlp_errors += 1
 
 def my_hook(d):
     """
@@ -97,6 +110,7 @@ def remove_entry(item: CustomListItem, url_to_remove: str):
         tkinter.messagebox.showwarning(title="ValueError", detail="Could not remove item.", icon='error')
     item.destroy()
 
+
 def clear_list(list: tk.Frame):
     """
     Destroys all child-widgets in the scroll frame and clears the url-list.
@@ -120,7 +134,7 @@ def begin_download(audio_fomrat: tk.StringVar, download: ttk.Button, clear: ttk.
             download.configure(state=tk.DISABLED)
             clear.configure(state=tk.DISABLED)
 
-            # Create a loading window
+            # Create a loading bar
             progress = ttk.Progressbar(frame, mode='indeterminate', orient=tk.HORIZONTAL)
             progress.grid(row=0, column=3, sticky='we', padx=10)
             progress.start()
@@ -134,6 +148,7 @@ def download_items(uris: list, path: str, audio_format: str, download: ttk.Butto
     """
     Based on the example from yt-dlp's GitHub.
     """
+    logger: MyLogger = MyLogger()
     ydl_opts = {
         'format': audio_format + '/bestaudio/best',
         'postprocessors': [{
@@ -141,7 +156,7 @@ def download_items(uris: list, path: str, audio_format: str, download: ttk.Butto
             'preferredcodec': audio_format,
         }],
         'paths' : { 'home' : path },
-        'logger': MyLogger(),
+        'logger': logger,
         'quiet': True,
         'progress_hooks': [my_hook]
     }
@@ -153,22 +168,23 @@ def download_items(uris: list, path: str, audio_format: str, download: ttk.Butto
     progress.stop()
     progress.destroy()
 
-    if error_code == 0: tkinter.messagebox.showinfo(title="", message="Download complete.", icon='info')
+    detail: str = str(logger.dlp_e) + " errors, " + str(logger.dlp_w) + " warnings."
+    if error_code == 0: tkinter.messagebox.showinfo(title="", message="Download complete.", icon='info', detail=detail)
     else:
         tkinter.messagebox.showinfo(
             title="Error",
             message="Something went wrong.",
             icon='error',
-            detail="Things may not work as expected.\nCheck the log file! Error code: " + str(error_code)
+            detail=str(logger.dlp_e) +" errors. Check the log file! Error code: " + str(error_code)
         )
     
     download.configure(state=tk.NORMAL)
     clear.configure(state=tk.NORMAL)
 
 
-def extract_info(url: str, info: dict, label: ttk.Label):
+def extract_info(url: str, info: dict, label: ttk.Label, remove: ttk.Button):
     """
-    Extracts information from the video's url.
+    Extracts information from the video's or playlist's url.
     """
     ydl_opts = {
         'logger': MyLogger(),
@@ -176,21 +192,49 @@ def extract_info(url: str, info: dict, label: ttk.Label):
         'progress_hooks': [my_hook]
     }
 
+    # Extract the infomration
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         info_dict = ydl.sanitize_info(info)
+    
+    t: str = info_dict.get('_type', "")
+    lab_text: str
 
-    img: str = info_dict.get('thumbnail', "")
-    title: str = info_dict.get('fulltitle', "Unknown title")
-    duration: str = info_dict.get('duration_string', "-:-")
+    # Add the extracted information to the video or playlist.
+    if t == "video":
+        title: str = info_dict.get('fulltitle', "Unknown video title")
+        duration: str = info_dict.get('duration_string', "-:-")
+        info['title'] = title
+        info['duration'] = duration
+        lab_text = title + " [" + duration + ']'
+    elif t == "playlist":
+        title: str = info_dict.get('title', "Unknown playlist title")
+        playlist_count: int = info_dict.get('playlist_count', -1)
+        info['title'] = title
+        info['count'] = playlist_count
 
-    info['img']     = img
-    info['title']   = title
-    info['duration']= duration
+        dur: int = 0
+        for e in info_dict.get('entries'):
+            dur += e.get('duration')
+        
+        seconds = dur % (24 * 3600)
+        hour = dur // 3600
+        seconds %= 3600
+        minutes = dur // 60
+        seconds %= 60
+
+        dur_str: str =  "%d:%02d:%02d" % (hour, minutes, seconds)
+        info['duration'] = dur_str
+
+        lab_text = title + " [" + dur_str + "] - " + str(playlist_count) + " videos"
+    else:
+        lab_text = "Unknown"
 
     # Update the video label
-    lab_text: str = title + " [" + duration + ']'
     label.configure(text=lab_text)
+    
+    # Add the remove button
+    remove.grid(row=0, column=0, sticky='e')
 
 
 def stop_download():
