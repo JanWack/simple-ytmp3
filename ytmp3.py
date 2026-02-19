@@ -62,8 +62,8 @@ class CustomListItem(tk.Frame):
             relief="flat"
         )
 
-        lab_text: str = self.info['title'] + ' [' + self.info['duration'] + ']'
-
+        lab_text: str = "Track " + str(len(URLs) - 1) + " :\t" + self.info['title'] + ' [' + self.info['duration'] + ']'
+        
         lab = ttk.Label(self, text=lab_text)
         remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']), style='R.TButton')
         lab.grid(row=0, column=1, sticky='e', padx=10)
@@ -87,7 +87,7 @@ def add_entry(input: ttk.Entry, url: str, list: tk.Frame):
         URLs.append(url)
 
         info_obj = CustomListItem(list, url)
-        info_obj.pack()
+        info_obj.pack(anchor='w')
 
 
 def remove_entry(item: CustomListItem, url_to_remove: str):
@@ -115,19 +115,30 @@ def clear_list(list: tk.Frame):
     URLs.clear()
 
 
-def begin_download(path: tk.StringVar, audio_fomrat: tk.StringVar):
+def begin_download(path: tk.StringVar, audio_fomrat: tk.StringVar, download: ttk.Button, clear: ttk.Button, frame: tk.Frame):
     """
     Starts the download process in a separate thread.
     """
     if not URLs: tkinter.messagebox.showinfo(title="No items", detail="There is nothing to download.", icon='info')
     else:
+        # Prevents accidental modifications to the url-list
+        url_cpy = URLs.copy()
         if browse_files(path):
-            thread1 = threading.Thread(target=download_items, args=(URLs, path.get(), audio_fomrat.get()))
+            # Disable the download and clear button.
+            download.configure(state=tk.DISABLED)
+            clear.configure(state=tk.DISABLED)
+
+            # Create a loading window
+            progress = ttk.Progressbar(frame, mode='indeterminate', orient=tk.HORIZONTAL)
+            progress.grid(row=0, column=3, sticky='we', padx=10)
+            progress.start()
+
+            thread1 = threading.Thread(target=download_items, args=(url_cpy, path.get(), audio_fomrat.get(), download, clear, progress))
             thread1.start()
         else: return
 
 
-def download_items(uris: list, path: str, audio_format: str):
+def download_items(uris: list, path: str, audio_format: str, download: ttk.Button, clear: ttk.Button, progress: ttk.Progressbar):
     """
     Based on the example from yt-dlp's GitHub.
     """
@@ -146,6 +157,9 @@ def download_items(uris: list, path: str, audio_format: str):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(MyPostProcessor(), when='pre_process')
         error_code = ydl.download(uris)
+    
+    progress.stop()
+    progress.destroy()
 
     if error_code == 0: tkinter.messagebox.showinfo(title="", message="Download complete.", icon='info')
     else:
@@ -155,6 +169,9 @@ def download_items(uris: list, path: str, audio_format: str):
             icon='error',
             detail="Things may not work as expected.\nCheck the log file! Error code: " + str(error_code)
         )
+    
+    download.configure(state=tk.NORMAL)
+    clear.configure(state=tk.NORMAL)
 
 
 def extract_info(url: str) -> dict[str, str]:
@@ -224,7 +241,7 @@ def app():
     # Variables
     url_var             = tk.StringVar(root)
     destination_path    = tk.StringVar(root)
-    audio_format        = tk.StringVar(root) # Default is m4a
+    audio_format        = tk.StringVar(root)
 
     # Styles
     style = ttk.Style().configure(
@@ -240,9 +257,9 @@ def app():
     input               = ttk.Entry         (frame0, textvariable=url_var)
     add_button          = ttk.Button        (frame0, text="+", command=lambda: add_entry(input, url_var.get(), scrollable_frame), width=2, style='F.TButton')
     clear_entry         = ttk.Button        (frame0, text="x", command= lambda: input.delete(0, tk.END), width=2, style='F.TButton')
-    download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, audio_format))
     mp3_button          = ttk.Radiobutton   (frame2, text="mp3", variable=audio_format, value="mp3")
     m4a_button          = ttk.Radiobutton   (frame2, text="m4a", variable=audio_format, value="m4a")
+    download            = ttk.Button        (frame2, text="Download", command=lambda: begin_download(destination_path, audio_format, download, clear, frame2))
     clear               = ttk.Button        (frame2, text="Clear list", command=lambda: clear_list(scrollable_frame))
     sep1                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
     sep2                = ttk.Separator     (frame1, orient=tk.HORIZONTAL)
