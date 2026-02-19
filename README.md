@@ -4,8 +4,7 @@ A simple program that converts YouTube videos and playlists to m4a/mp3 files.
 Based on [yt-dlp](https://github.com/yt-dlp/yt-dlp)!
 
 ## 📚 Features
-- Converts videos and playlists
-- Can convert multiple videos. Just add the URL's to the download list.
+- Convert multiple videos and playlists at the same time.
 - High quality audio (if available)
 - Simple UI
 - Works on Windows and Linux (Ubuntu, but other distros will probably work fine as well)
@@ -14,7 +13,7 @@ Based on [yt-dlp](https://github.com/yt-dlp/yt-dlp)!
 Make sure you have installed:
 1. python3
 2. python3-venv (python3.12-venv)
-3. puthon3-kt
+3. python3-kt
 4. ffmpeg
 
 ### Linux (Debian)
@@ -34,7 +33,7 @@ cd simple-ytmp3
 ### 2. Run the install.sh script to install dependencies
 You may need to run chmod first.
 ```bash
-chmod rwx install.sh
+chmod +x install.sh
 ./install.sh
 ```
 You can use Git Bash if you are on Windows.
@@ -47,9 +46,10 @@ You can use Git Bash if you are on Windows.
 ```bash
 python3 ytmp3.py
 ```
-❗️**NOTE**: The install.sh script creates a virtual environment and installs all dependencies there. To run the script manually you need to activate it:
+❗️**NOTE**: The install.sh script creates a virtual environment and installs all dependencies there. To run the script manually, you need to activate it:
 ```bash
-source bin/activate
+cd simple-ytmp3
+source venv/bin/activate
 ```
 Or alternatively, install all dependencies outside of the virtual environemnt (see requirements.txt)
 
