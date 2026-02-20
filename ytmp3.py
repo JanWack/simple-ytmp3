@@ -68,14 +68,15 @@ class CustomListItem(tk.Frame):
             relief="flat"
         )
         
-        lab = ttk.Label(self, text="Loading...")
+        lab = ttk.Label(self, text=url)
         remove = ttk.Button(self, text="x", width=2, command=lambda: remove_entry(self, self.info['url']), style='R.TButton')
 
-        thread1 = threading.Thread(target=extract_info, args=(url, self.info, lab, remove))
+        thread1 = threading.Thread(target=extract_info, args=(url, self.info, lab))
         thread1.start()
 
 
         lab.grid(row=0, column=1, sticky='e', padx=10)
+        remove.grid(row=0, column=0, sticky='e')
      
 
 # ============= Functions ============= #
@@ -202,59 +203,57 @@ def download_items(uris: list, path: str, format: str, download: ttk.Button, cle
     clear.configure(state=tk.NORMAL)
 
 
-def extract_info(url: str, info: dict, label: ttk.Label, remove: ttk.Button):
-    """
-    Extracts information from the video's or playlist's url.
-    """
-    ydl_opts = {
-        'logger': MyLogger(),
-        'quiet': True,
-        'progress_hooks': [my_hook]
-    }
+def extract_info(url: str, info: dict, label: ttk.Label):
+	"""
+	Extracts information from the video's or playlist's url.
+	"""
+	ydl_opts = {
+		'logger': MyLogger(),
+		'quiet': True,
+		'progress_hooks': [my_hook]
+	}
 
-    # Extract the infomration
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        info_dict = ydl.sanitize_info(info)
-    
-    t: str = info_dict.get('_type', "")
-    lab_text: str
+	# Extract the infomration
+	with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+		info = ydl.extract_info(url, download=False)
+		info_dict = ydl.sanitize_info(info)
 
-    # Add the extracted information to the video or playlist.
-    if t == "video":
-        title: str = info_dict.get('fulltitle', "Unknown video title")
-        duration: str = info_dict.get('duration_string', "-:-")
-        info['title'] = title
-        info['duration'] = duration
-        lab_text = title + " [" + duration + ']'
-    elif t == "playlist":
-        title: str = info_dict.get('title', "Unknown playlist title")
-        playlist_count: int = info_dict.get('playlist_count', -1)
-        info['title'] = title
-        info['count'] = playlist_count
+	t: str = info_dict.get('_type', "")
+	lab_text: str
 
-        dur: int = 0
-        for e in info_dict.get('entries'):
-            dur += e.get('duration')
-        
-        seconds = dur % (24 * 3600)
-        hour = dur // 3600
-        seconds %= 3600
-        minutes = dur // 60
-        seconds %= 60
+	# Add the extracted information to the video or playlist.
+	if t == "video":
+		title: str = info_dict.get('fulltitle', "Unknown video title")
+		duration: str = info_dict.get('duration_string', "-:-")
+		info['title'] = title
+		info['duration'] = duration
+		lab_text = title + " [" + duration + ']'
+	elif t == "playlist":
+		title: str = info_dict.get('title', "Unknown playlist title")
+		playlist_count: int = info_dict.get('playlist_count', -1)
+		info['title'] = title
+		info['count'] = playlist_count
 
-        dur_str: str =  "%d:%02d:%02d" % (hour, minutes, seconds)
-        info['duration'] = dur_str
+		dur: int = 0
+		for e in info_dict.get('entries'):
+			dur += e.get('duration')
 
-        lab_text = title + " [" + dur_str + "] - " + str(playlist_count) + " videos"
-    else:
-        lab_text = "Unknown"
+		seconds = dur % (24 * 3600)
+		hour = dur // 3600
+		seconds %= 3600
+		minutes = dur // 60
+		seconds %= 60
 
-    # Update the video label
-    label.configure(text=lab_text)
-    
-    # Add the remove button
-    remove.grid(row=0, column=0, sticky='e')
+		dur_str: str =  "%d:%02d:%02d" % (hour, minutes, seconds)
+		info['duration'] = dur_str
+
+		lab_text = title + " [" + dur_str + "] - " + str(playlist_count) + " videos"
+	else:
+		lab_text = "Unknown"
+
+	# Update the video label
+	if label.winfo_exists():
+		label.configure(text=lab_text)
 
 
 def stop_download():
